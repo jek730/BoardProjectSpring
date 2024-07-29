@@ -10,6 +10,7 @@ import org.kje.member.constants.Authority;
 @Data
 @Entity
 @Builder
+@IdClass(AuthoritiesId.class)
 @NoArgsConstructor @AllArgsConstructor
 public class Authorities {
     @Id
