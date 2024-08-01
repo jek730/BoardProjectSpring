@@ -2,6 +2,7 @@ package org.kje.global.configs;
 
 import org.kje.member.services.LoginFailureHandler;
 import org.kje.member.services.LoginSuccessHandler;
+import org.kje.member.services.MemberAuthenticationEntryPoint;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -34,11 +35,22 @@ public class SecurityConfig {
 
         /* 인가(접근 통제) 설정 S */
         http.authorizeHttpRequests(c -> {
+            /*
+            c.requestMatchers("/member/**").anonymous()
+                    .requestMatchers("/admin/**").hasAnyAuthority("ADMIN")
+                    .anyRequest().authenticated();
+            */
             c.requestMatchers("/mypage/**").authenticated() // 회원 전용
                     .requestMatchers("/admin/**").hasAnyAuthority("ADMIN")
                     .anyRequest().permitAll();
         });
+
+        http.exceptionHandling(c -> {
+            c.authenticationEntryPoint(new MemberAuthenticationEntryPoint());
+        });
         /* 인가(접근 통제) 설정 E */
+
+
 
         return http.build();
     }
