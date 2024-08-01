@@ -25,6 +25,12 @@ public class EmailVerifyService {
         session.setAttribute("EmailAuthNum", authNum);
         session.setAttribute("EmailAuthStart", System.currentTimeMillis());
 
+        /*
+        EmailMessage emailMessage = new EmailMessage(
+                email,
+                Utils.getMessage("Email.verification.subject", "commons"),
+                Utils.getMessage("Email.verification.message", "commons"));
+        */
         EmailMessage emailMessage = new EmailMessage(email, "subject", "message");
         Map<String, Object> tplData = new HashMap<>();
         tplData.put("authNum", authNum);

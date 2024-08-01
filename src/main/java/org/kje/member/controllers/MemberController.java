@@ -8,15 +8,20 @@ import org.kje.member.services.MemberSaveService;
 import org.kje.member.validators.JoinValidator;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.support.SessionStatus;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Slf4j
 @Controller
 @RequestMapping("/member")
 @RequiredArgsConstructor
-@SessionAttributes("requestLogin")
+@SessionAttributes("requestLogin, EmailAuthVerified")
 public class MemberController implements ExceptionProcessor {
 
     private final JoinValidator joinValidator;
@@ -28,13 +33,17 @@ public class MemberController implements ExceptionProcessor {
     }
 
     @GetMapping("/join")
-    public String join(@ModelAttribute RequestJoin form) {
+    public String join(@ModelAttribute RequestJoin form, Model model) {
 
+        // 이메일 인증 여부 false로 초기화
+        model.addAttribute("EmailAuthVerified", false);
+
+        //return utils.tpl("member/join");
         return "front/member/join";
     }
 
     @PostMapping("/join")
-    public String joinPs(@Valid RequestJoin form, Errors errors) {
+    public String joinPs(@Valid RequestJoin form, Errors errors, Model model, SessionStatus sessionStatus) {
 
         joinValidator.validate(form, errors);
 
@@ -43,6 +52,9 @@ public class MemberController implements ExceptionProcessor {
         }
 
         memberSaveService.save(form); // 회원 가입 처리
+
+        // EmailAuthVerified 세션값 비우기 */
+        sessionStatus.setComplete();
 
         return "redirect:/member/login";
     }
@@ -74,5 +86,28 @@ public class MemberController implements ExceptionProcessor {
     @PreAuthorize("hasAnyAuthority('ADMIN')")
     public void test2() {
         log.info("test2 - 관리자만 접근 가능");
+    }
+
+    @ResponseBody
+    private void commonProcess(String mode, Model model) {
+        mode = StringUtils.hasText(mode) ? mode : "join";
+        String pageTitle = "회원가입";
+        //String pageTitle = Utils.getMessage("회원가입", "commons");
+
+        List<String> addCss = new ArrayList<>();
+        List<String> addScript = new ArrayList<>();
+
+        if (mode.equals("login")) { // 로그인
+            pageTitle = "로그인";
+            //pageTitle = Utils.getMessage("로그인", "commons");
+
+        } else if (mode.equals("join")) { // 회원가입
+            addCss.add("member/join");
+            addScript.add("member/join");
+        }
+
+        model.addAttribute("pageTitle", pageTitle);
+        model.addAttribute("addCss", addCss);
+        model.addAttribute("addScript", addScript);
     }
 }
