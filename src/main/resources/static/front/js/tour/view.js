@@ -1,74 +1,20 @@
-const items = [
-    [126.94062742683245, 37.557756188912954],
-    [126.94120499658828, 37.557287959390024],
-    [126.94069261563956, 37.561184514897825]
-];
-
 window.addEventListener("DOMContentLoaded", function() {
-    const mapEl = document.getElementById("map");
-    mapEl.style.width = "1000px";
-    mapEl.style.height = "600px";
-
-    const map = new kakao.maps.Map(mapEl, {
-        center: new kakao.maps.LatLng(items[0][1], items[0][0]),
-        level: 5,
-    });
-    const markers = items.map(pos => {
-        const position = new kakao.maps.LatLng(pos[1], pos[0]);
-        return new kakao.maps.Marker({position});
-    });
-
-    markers.forEach(marker => marker.setMap(map));
-
-    const removeEls = document.getElementsByClassName("remove");
-    for (let i = 0; i < removeEls.length; i++) {
-        removeEls[i].addEventListener("click", function() {
-            markers[i].setMap(null);
-        });
-    }
-
+    const options = {
+        center: {
+            lat: 37.557756188912954,
+            lng: 126.94062742683245,
+        },
+        marker: [
+            {lat: 37.557756188912954, lng: 126.94062742683245},
+            {lat: 37.557287959390024, lng: 126.94120499658828},
+            {lat: 37.561184514897825, lng: 126.94069261563956},
+        ],
+        markerImage: "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_red.png",
+    };
+    mapLib.load("map1", 1000, 600, options);
     /*
-    let map;
-
-    navigator.geolocation.getCurrentPosition((pos) => {
-        const { latitude, longitude } = pos.coords;
-
-        const mapOption = {
-            center: new kakao.maps.LatLng(latitude, longitude),
-            level: 3,
-        };
-
-        map = new kakao.maps.Map(mapEl, mapOption);
-
-        const markerPos = new kakao.maps.LatLng(latitude, longitude);
-        const marker = new kakao.maps.Marker({
-           position: markerPos
-        });
-
-        marker.setMap(map);
-        mapProcess(map);
-    });
-
-    // 지도 클릭시 좌표 정보
-    /*
-    if (map) {
-        kakao.maps.event.addListener(map, 'click', function(e) {
-            console.log(e);
-        });
-
-    } // endif
-    */
-    /*
-    function mapProcess(map) {
-        // 지도 클릭시 좌표 정보
-        kakao.maps.event.addListener(map, 'click', function(e) {
-            const latLng = e.latLng;
-            const marker = new kakao.maps.Marker({
-                position: latLng
-            });
-
-            marker.setMap(map);
-        });
-    }
+    mapLib.load("map1", 300, 300, options);
+    mapLib.load("map2", 400, 400, options);
+    mapLib.load("map3", 500, 500, options);
     */
 });
