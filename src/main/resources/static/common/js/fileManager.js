@@ -31,7 +31,18 @@ const fileManager = {
 
             const { ajaxLoad } = commonLib;
 
-            ajaxLoad('/file/upload', 'POST', formData);
+            ajaxLoad('/file/upload', 'POST', formData)
+                .then(res => {
+                    if (!res.success) {
+                        alert(res.message);
+                        return;
+                    }
+                    // 파일 업로드 후 처리는 다양, fileUploadCallback을 직접 상황에 맞게 정의 처리
+                    if (typeof parent.fileUploadCallback === 'function') {
+                        parent.fileUploadCallback(res.data);
+                    }
+                })
+                .catch(err => alert(err.message));
 
         } catch (e) {
             console.error(e);
@@ -82,6 +93,7 @@ window.addEventListener("DOMContentLoaded", function() {
     fileEl.addEventListener("change", function(e) {
         const files = e.target.files;
         fileManager.upload(files, fileEl.gid, fileEl.location);
+
     });
 
 });
