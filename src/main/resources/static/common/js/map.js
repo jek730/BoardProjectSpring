@@ -117,7 +117,35 @@ const mapLib = {
                     options.marker.push({lat: item.y, lng: item.x});
                 });
             }
-             mapLib.load(mapId, width, height, options);
+
+            mapLib.load(mapId, width, height, options);
+        });
+    },
+    /**
+    * 주소로 지도 검색
+    *
+    */
+    loadByAddress(address, cnt = 0, mapId, width = 300, height = 300, options) {
+
+        if (!address?.trim()) return;
+
+        const geocoder = new kakao.maps.services.Geocoder();
+
+        geocoder.addressSearch(address, (items, status) => {
+            if (status === kakao.maps.services.Status.OK) {
+                // cnt가 0이면 전체 목록, 1 이상이면 갯수 제한
+                items = cnt > 0 ? items.slice(0, cnt + 1) : items;
+
+                options = options ?? {};
+                options.center = { lat: items[0].y, lng: items[0].x };
+                options.marker = [];
+
+                items.forEach(item => {
+                    options.marker.push({lat: item.y, lng: item.x});
+                });
+            }
+
+            mapLib.load(mapId, width, height, options);
         });
     }
 };
