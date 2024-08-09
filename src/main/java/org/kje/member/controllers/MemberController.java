@@ -16,6 +16,7 @@ import org.springframework.web.bind.support.SessionStatus;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Slf4j
 @Controller
@@ -88,26 +89,31 @@ public class MemberController implements ExceptionProcessor {
         log.info("test2 - 관리자만 접근 가능");
     }
 
-    @ResponseBody
+    /**
+     * 회원 관련 컨트롤러 공통 처리
+     *
+     * @param mode
+     * @param model
+     */
     private void commonProcess(String mode, Model model) {
-        mode = StringUtils.hasText(mode) ? mode : "join";
-        String pageTitle = "회원가입";
-        //String pageTitle = Utils.getMessage("회원가입", "commons");
+        mode = Objects.requireNonNullElse(mode, "join");
 
         List<String> addCss = new ArrayList<>();
+        List<String> addCommonScript = new ArrayList<>();
         List<String> addScript = new ArrayList<>();
 
-        if (mode.equals("login")) { // 로그인
-            pageTitle = "로그인";
-            //pageTitle = Utils.getMessage("로그인", "commons");
-
-        } else if (mode.equals("join")) { // 회원가입
+        addCss.add("member/style");  // 회원 공통 스타일
+        if (mode.equals("join")) {
+            addCommonScript.add("fileManager");
             addCss.add("member/join");
             addScript.add("member/join");
+
+        } else if (mode.equals("login")) {
+            addCss.add("member/login");
         }
 
-        model.addAttribute("pageTitle", pageTitle);
         model.addAttribute("addCss", addCss);
+        model.addAttribute("addCommonScript", addCommonScript);
         model.addAttribute("addScript", addScript);
     }
 }

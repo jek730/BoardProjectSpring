@@ -72,16 +72,64 @@ const fileManager = {
     /**
     * 파일 삭제
     *
+    * @param seq : 파일 등록 번호
     */
-    delete() {
+    delete(seq) {
+        if (!seq) return;
+
+        const { ajaxLoad } = commonLib;
+
+        (async () => {
+            try {
+                const fileInfo = await ajaxLoad(`/file/delete/${seq}`, 'DELETE');
+
+                if (typeof parent.fileDeleteCallback === 'function') {
+                    parent.fileDeleteCallback(fileInfo);
+                }
+
+            } catch (err) {
+                alert(err.message);
+                console.error(err);
+            }
+        })();
+
+
 
     },
     /**
     * 파일 조회
     *
+    * @param params - seq 값이 있으면 개별 조회, gid, location이 있으면 목록 조회
+    *               - seq가 가장 우선적으로 조회
     */
-    search() {
+    search(params) {
+        const { seq, gid, location } = params;
+        if (!seq || !gid) return;
 
+        let requestUrl = "/file";
+        if (seq) {
+            requestUrl += `/info/${seq}`;
+        } else {
+            requestUrl += `/list/${gid}`;
+            if (location) requestUrl += `?location=${location}`;
+        }
+
+        const { ajaxLoad } = commonLib;
+        (async () => {
+            try {
+                const response = await ajaxLoad(requestUrl);
+                if (response.isSuccess) {
+                    const data = response.data;
+
+                    if (typeof parent.fileSearchCallback === 'function') {
+                        parent.fileSearchCallback(data);
+                    }
+                }
+            } catch (err) {
+                alert(err.message);
+                console.error(err);
+            }
+        })();
     }
 };
 
@@ -94,6 +142,33 @@ window.addEventListener("DOMContentLoaded", function() {
     fileEl.multiple = true;
 
     for (const el of fileUploads) {
+        const mode = el.dataset.mode;
+        // 드래그 앤 드롭 파일 업로드
+        if (mode == 'dragNdrop') {
+
+            el.addEventListener("dragover", function(e) {
+                e.preventDefault();
+            });
+
+            el.addEventListener("drop", function(e) {
+                e.preventDefault();
+
+                const files = e.dataTransfer.files;
+
+                const dataset = this.dataset;
+                const gid = dataset.gid;
+                const location = dataset.location;
+                const single = dataset.single === 'true';
+                const imageOnly = dataset.imageOnly === 'true';
+                const done = dataset.done === 'true';
+
+                fileManager.upload(files, { gid, location, single, imageOnly, done });
+
+            });
+
+            continue;
+        }
+
         el.addEventListener("click", function() {
             fileEl.value = "";
             delete fileEl.gid;
