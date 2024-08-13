@@ -1,5 +1,6 @@
 package org.kje.member;
 
+import lombok.RequiredArgsConstructor;
 import org.kje.member.constants.Authority;
 import org.kje.member.entities.Authorities;
 import org.kje.member.entities.Member;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 @Component
+@RequiredArgsConstructor
 public class MemberUtil {
 
     public boolean isLogin() {
@@ -18,18 +20,17 @@ public class MemberUtil {
 
     public boolean isAdmin() {
         if (isLogin()) {
-            Member member = getMember();
-            List<Authorities> authorities = member.getAuthorities();
-            return authorities.stream().anyMatch(s -> s.getAuthority() == Authority.ADMIN);
+            List<Authorities> authorities = getMember().getAuthorities();
+            return authorities.stream().anyMatch(s -> s.getAuthority().equals(Authority.ADMIN));
         }
-
         return false;
     }
 
     public Member getMember() {
+
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.isAuthenticated() && authentication.getPrincipal() instanceof MemberInfo) {
-            MemberInfo memberInfo = (MemberInfo) authentication.getPrincipal();
+
+        if (authentication != null && authentication.isAuthenticated() && authentication.getPrincipal() instanceof MemberInfo memberInfo) {
 
             return memberInfo.getMember();
         }
