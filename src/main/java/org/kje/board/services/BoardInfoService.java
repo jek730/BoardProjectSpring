@@ -9,18 +9,22 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.kje.board.controllers.BoardDataSearch;
+import org.kje.board.controllers.RequestBoard;
 import org.kje.board.entities.BoardData;
 import org.kje.board.entities.QBoardData;
 import org.kje.board.exceptions.BoardDataNotFoundException;
 import org.kje.board.repositories.BoardDataRepository;
 import org.kje.global.ListData;
 import org.kje.global.Pagination;
+import org.kje.global.constants.DeleteStatus;
+import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @Transactional
@@ -36,11 +40,14 @@ public class BoardInfoService {
      *
      * @return
      */
-    public ListData<BoardData> getList(BoardDataSearch search) {
+    public ListData<BoardData> getList(BoardDataSearch search, DeleteStatus status) {
 
         int page = Math.max(search.getPage(), 1);
         int limit = search.getLimit();
         int offset = (page - 1) * limit;
+
+        // 삭제가 되지 않은 게시글 목록이 기본 값
+        status = Objects.requireNonNullElse(status, DeleteStatus.UNDELETED);
 
         String sopt = search.getSopt();
         String skey = search.getSkey();
@@ -51,6 +58,15 @@ public class BoardInfoService {
         /* 검색 처리 S */
         QBoardData boardData = QBoardData.boardData;
         BooleanBuilder andBuilder = new BooleanBuilder();
+
+        // 삭제, 미삭제 게시글 조회 처리
+        if (status != DeleteStatus.ALL) {
+            if (status == DeleteStatus.UNDELETED) {
+                andBuilder.and(boardData.deletedAt.isNull()); // 미삭된 게시글
+            } else {
+                andBuilder.and(boardData.deletedAt.isNotNull()); // 삭제된 게시글
+            }
+        }
 
         if (bid != null && StringUtils.hasText(bid.trim())) { // 게시판별 조회
             bids = List.of(bid);
@@ -164,10 +180,14 @@ public class BoardInfoService {
      * @param search
      * @return
      */
-    public ListData<BoardData> getList(String bid, BoardDataSearch search) {
+    public ListData<BoardData> getList(String bid, BoardDataSearch search, DeleteStatus status) {
         search.setBid(bid);
 
-        return getList(search);
+        return getList(search, status);
+    }
+
+    public ListData<BoardData> getList(String bid, BoardDataSearch search) {
+        return getList(bid, search, DeleteStatus.UNDELETED);
     }
 
     /**
@@ -175,9 +195,32 @@ public class BoardInfoService {
      * @param seq
      * @return
      */
-    public BoardData get(Long seq) {
+    public BoardData get(Long seq, DeleteStatus status) {
 
-        BoardData item = repository.findById(seq).orElseThrow(BoardDataNotFoundException::new);
+        BooleanBuilder andBuilder = new BooleanBuilder();
+        QBoardData boardData = QBoardData.boardData;
+        andBuilder.and(boardData.seq.eq(seq));
+
+        // 삭제, 미삭제 게시글 조회 처리
+        if (status != DeleteStatus.ALL) {
+            if (status == DeleteStatus.UNDELETED) {
+                andBuilder.and(boardData.deletedAt.isNull()); // 미삭된 게시글
+            } else {
+                andBuilder.and(boardData.deletedAt.isNotNull()); // 삭제된 게시글
+            }
+        }
+
+        BoardData item = queryFactory.selectFrom(boardData)
+                .leftJoin(boardData.board)
+                .fetchJoin()
+                .leftJoin(boardData.member)
+                .fetchJoin()
+                .where(andBuilder)
+                .fetchFirst();
+
+        if (item == null) {
+            throw new BoardDataNotFoundException();
+        }
 
         // 추가 데이터 처리
         addInfo(item);
@@ -185,6 +228,33 @@ public class BoardInfoService {
         return item;
     }
 
+    public BoardData get(Long seq) {
+        return get(seq, DeleteStatus.UNDELETED);
+    }
+
+    /**
+     * BoardData 엔티티 -> RequestBoard 커맨드 객체로 변환
+     *
+     * @param seq
+     * @return
+     */
+    public RequestBoard getForm(Long seq, DeleteStatus status) {
+        BoardData item = get(seq, status);
+
+        return getForm(item, status);
+    }
+
+    public RequestBoard getForm(BoardData item, DeleteStatus status) {
+        return new ModelMapper().map(item, RequestBoard.class);
+    }
+
+    public RequestBoard getForm(Long seq) {
+        return getForm(seq, DeleteStatus.UNDELETED);
+    }
+
+    public RequestBoard getForm(BoardData item) {
+        return getForm(item, DeleteStatus.UNDELETED);
+    }
     /**
      *  추가 데이터 처리
      *      - 업로드한 파일 목록
